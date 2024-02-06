@@ -35,7 +35,7 @@ services:
     networks:
       - backend
     volumes:
-      - postgres_data:/data/postgres
+      - postgres_data:/var/lib/postgresql/data
 
 networks:
   backend:

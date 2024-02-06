@@ -1,5 +1,5 @@
 ## URLs
-- **Frontend URL**: [https://kkulembetov.kpd.nomoredomainswork.ru](https://kkulembetov.kpd.nomoredomainswork.ru)
+- **Frontend URL**: [https://kkulembetov.kpd.nomoredomainswork.ru](https://kulembetov.kpd.nomoredomainswork.ru)
 - **Backend URL**: [https://api.kulembetov.kpd.nomoredomainswork.ru](https://api.kulembetov.kpd.nomoredomainswork.ru)
 - **IP Address**: 158.160.40.178
 

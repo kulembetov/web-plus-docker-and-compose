@@ -1,6 +1,6 @@
 ## URLs
-- **Frontend URL**: [https://kulembetov.kpd.nomoredomainsmonster.ru/](https://kulembetov.kpd.nomoredomainsmonster.ru/)
-- **Backend URL**: [https://api.kulembetov.kpd.nomoredomainsmonster.ru/](https://api.kulembetov.kpd.nomoredomainsmonster.ru/)
+- **Frontend URL**: [kulembetov.kpd.nomoredomainswork.ru](https://kulembetov.kpd.nomoredomainsmonster.ru/)
+- **Backend URL**: [https://api.kulembetov.kpd.nomoredomainsmonster.ru/](https://api.kulembetov.kpd.nomoredomainswork.ru/)
 - **IP Address**: 158.160.40.178
 
 ### Докеризация приложения

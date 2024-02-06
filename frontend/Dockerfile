@@ -1,16 +1,12 @@
-FROM node:16-alpine AS builder
+FROM node:16-alpine as builder
 WORKDIR /app
 COPY package*.json .
-RUN npm ci --no-audit --no-fund
+RUN npm i --omit=dev --no-audit --no-fund
 COPY . .
 RUN npm run build
 
-FROM node:16-alpine AS backend
+FROM nginx:alpine as frontend
 WORKDIR /app
-COPY package*.json .
-RUN npm ci --omit=dev --no-audit --no-fund \
-    && npm i -g pm2
-COPY --from=builder /app/dist ./dist
-COPY ./ecosystem.config.js .
-
-ENTRYPOINT [ "pm2-runtime", "start", "ecosystem.config.js" ]
+COPY --from=builder /app/build /usr/share/nginx/html
+COPY ./nginx/default.conf /etc/nginx/conf.d
+ENTRYPOINT [ "nginx", "-g", "daemon off;" ]

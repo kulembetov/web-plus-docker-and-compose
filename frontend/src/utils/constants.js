@@ -1,4 +1,4 @@
-export const URL = process.env.REACT_APP_BACKEND_URL;
+export const URL = 'https://api.kulembetov.kpd.nomoredomainswork.ru';
 
 export const MINIMUM_PASSWORD_LENGTH = 3;
 export const MINIMUM_USERNAME_LENGTH = 3;

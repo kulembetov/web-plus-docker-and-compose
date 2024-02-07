@@ -17,7 +17,6 @@ import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
-import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -53,7 +52,7 @@ import { AppController } from './app.controller';
     AuthModule,
     JwtModule,
   ],
-  controllers: [AppController],
+  controllers: [],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

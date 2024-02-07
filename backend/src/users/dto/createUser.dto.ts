@@ -1,23 +1,33 @@
-import { IsEmail, IsOptional, IsString, Length } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  IsUrl,
+  Length,
+  IsOptional,
+} from 'class-validator';
 
 export class CreateUserDto {
+  @IsOptional()
+  @Length(2, 30, { message: 'Строка должна включать от 2 до 30 символов' })
   @IsString()
-  @Length(2, 30)
   username: string;
 
-  @IsEmail()
-  email: string;
-
-  @IsString()
-  @Length(6, 20)
-  password: string;
-
-  @IsString()
-  @Length(2, 200)
+  @IsOptional()
+  @Length(2, 200, { message: 'Строка должна включать от 2 до 200 символов' })
   @IsOptional()
   about: string;
 
   @IsString()
   @IsOptional()
+  @IsUrl()
   avatar: string;
+
+  @IsEmail()
+  email: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @Length(6, 20)
+  password: string;
 }

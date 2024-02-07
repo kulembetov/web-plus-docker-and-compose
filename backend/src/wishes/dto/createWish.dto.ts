@@ -1,7 +1,7 @@
 import { IsNumber, IsOptional, IsString, IsUrl, Length } from 'class-validator';
 
 export class CreateWishDto {
-  @Length(1, 250)
+  @Length(1, 250, { message: 'Строка должна включать от 1 до 250 символов' })
   name: string;
 
   @IsString()
@@ -14,7 +14,7 @@ export class CreateWishDto {
   price: number;
 
   @IsString()
-  @Length(1, 1500)
+  @Length(1, 1024, { message: 'Строка должна включать от 1 до 1024 символов' })
   @IsOptional()
   description?: string;
 }

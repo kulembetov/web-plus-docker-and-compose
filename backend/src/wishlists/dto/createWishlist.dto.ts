@@ -2,7 +2,7 @@ import { IsArray, IsNumber, IsString, IsUrl, Length } from 'class-validator';
 
 export class CreateWishlistDto {
   @IsString()
-  @Length(2, 30)
+  @Length(1, 250, { message: 'Строка должна включать от 1 до 250 символов' })
   name: string;
 
   @IsUrl()

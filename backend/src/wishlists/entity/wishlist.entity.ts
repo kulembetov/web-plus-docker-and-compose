@@ -7,7 +7,7 @@ import { Entity, Column, ManyToOne, ManyToMany, JoinTable } from 'typeorm';
 @Entity()
 export class WishList extends BaseEntity {
   @Column()
-  @Length(1, 250)
+  @Length(1, 250, { message: 'Строка должна включать от 1 до 250 символов' })
   @IsString()
   name: string;
 

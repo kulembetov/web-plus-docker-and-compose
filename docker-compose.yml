@@ -8,24 +8,40 @@ services:
       dockerfile: Dockerfile
     image: backend
     ports:
-      - 4000:3002
+      - "4000:3000"
     env_file:
       - .env
     depends_on:
       - database
     networks:
-      - backend
+      - app-network
 
   frontend:
     container_name: frontend
     build:
       context: frontend
       dockerfile: Dockerfile
+      args:
+        REACT_APP_BACKEND_URL: https://api.kulembetov.kpd.nomoredomainswork.ru
     image: frontend
     ports:
-      - 8081:80
+      - "8081:80"
     networks:
+      - app-network
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"       # Map HTTP traffic
+      - "443:443"     # Map HTTPS traffic
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/certs:/etc/nginx/certs
+    depends_on:
+      - backend
       - frontend
+    networks:
+      - app-network
 
   database:
     container_name: postgres
@@ -33,13 +49,12 @@ services:
     env_file: .env
     restart: unless-stopped
     networks:
-      - backend
+      - app-network
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
 networks:
-  backend:
-  frontend:
+  app-network:
 
 volumes:
   postgres_data:

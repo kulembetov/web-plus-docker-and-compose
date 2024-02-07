@@ -16,7 +16,7 @@ export class CreateUserDto {
   @IsOptional()
   @Length(2, 200, { message: 'Строка должна включать от 2 до 200 символов' })
   @IsString()
-  about: string;
+  about?: string;
 
 	@IsOptional()
 	@IsUrl()

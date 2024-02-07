@@ -12,7 +12,7 @@ export class UpdateUserDto {
 
   @IsOptional()
   @IsString()
-  @Length(6, 20)
+  @Length(6, 20, { message: 'Строка должна включать от 6 до 20 символов' })
   password?: string;
 
   @IsOptional()

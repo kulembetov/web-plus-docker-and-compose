@@ -21,8 +21,6 @@ services:
     build:
       context: frontend
       dockerfile: Dockerfile
-      args:
-        REACT_APP_BACKEND_URL: https://api.kulembetov.kpd.nomoredomainswork.ru
     image: frontend
     ports:
       - "8081:80"

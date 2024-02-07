@@ -15,19 +15,16 @@ export class CreateUserDto {
 
   @IsOptional()
   @Length(2, 200, { message: 'Строка должна включать от 2 до 200 символов' })
-  @IsOptional()
+  @IsString()
   about: string;
 
-  @IsString()
-  @IsOptional()
-  @IsUrl()
+	@IsOptional()
+	@IsUrl()
   avatar: string;
 
   @IsEmail()
   email: string;
 
   @IsNotEmpty()
-  @IsString()
-  @Length(6, 20)
   password: string;
 }

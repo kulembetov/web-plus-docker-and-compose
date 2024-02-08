@@ -15,6 +15,7 @@ export class User extends BaseEntity {
   @Column({ default: 'Пока ничего не рассказал о себе' })
   @Length(1, 200)
   @IsOptional()
+  @IsString()
   about: string;
 
   @Column()

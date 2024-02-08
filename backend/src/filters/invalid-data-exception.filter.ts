@@ -14,15 +14,20 @@ export class InvalidDataExceptionFilter implements ExceptionFilter {
     const status = exception.getStatus();
     const exceptionResponse = exception.getResponse();
 
-    let validationMessages = [];
-    if (typeof exceptionResponse === 'object' && 'message' in exceptionResponse) {
+    let validationMessages: string[] = [];
+
+    if (Array.isArray(exceptionResponse['message'])) {
       validationMessages = exceptionResponse['message'];
+    } else if (typeof exceptionResponse['message'] === 'string') {
+      validationMessages = [exceptionResponse['message']];
+    } else {
+      validationMessages = ['An unexpected validation error occurred.'];
     }
 
     response.status(status).json({
       statusCode: status,
       error: 'Bad Request',
-      messages: validationMessages.length > 0 ? validationMessages : ['Не удалось обновить данные. Пожалуйста, проверьте предоставленную информацию на наличие ошибок.'],
+      messages: validationMessages,
     });
   }
 }

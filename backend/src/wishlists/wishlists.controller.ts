@@ -33,6 +33,12 @@ export class WishlistsController {
     return await this.wishlistsService.createWishlist(id, createWishlistDto);
   }
 
+  @UseGuards(JwtGuard)
+  @Delete(':id')
+  async deleteWish(@Param('id') wishId: number, @Req() { user: { id } }) {
+    return this.wishlistsService.removeOne(wishId, id);
+  }
+
   @UseInterceptors(WishOwnerInterceptor)
   @Get(':id')
   async findOneById(@Param('id') id: number): Promise<WishList> {

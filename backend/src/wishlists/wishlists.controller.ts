@@ -3,7 +3,6 @@ import {
   Controller,
   Get,
   Post,
-  Delete,
   Req,
   Param,
   UseGuards,
@@ -32,12 +31,6 @@ export class WishlistsController {
     @Body() createWishlistDto: CreateWishlistDto,
   ): Promise<WishList> {
     return await this.wishlistsService.createWishlist(id, createWishlistDto);
-  }
-
-  @UseGuards(JwtGuard)
-  @Delete(':id')
-  async deleteWishlist(@Param('id') wishListId: number, @Req() { user: { id: userId } }) {
-    return this.wishlistsService.removeOne(wishListId, userId);
   }
 
   @UseInterceptors(WishOwnerInterceptor)

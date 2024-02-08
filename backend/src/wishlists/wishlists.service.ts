@@ -67,7 +67,7 @@ export class WishlistsService {
     return wishlist;
   }
 
-  async removeOne(userId: number, wishListId: number) {
+  async removeOne(wishListId: number, userId: number) {
     const wishlist = await this.findOne(wishListId);
 
     if (userId !== wishlist.owner.id) {

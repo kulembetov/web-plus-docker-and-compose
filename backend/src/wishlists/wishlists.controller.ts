@@ -36,8 +36,11 @@ export class WishlistsController {
 
   @UseGuards(JwtGuard)
   @Delete(':id')
-  async deleteWish(@Param('id') wishListId: number, @Req() { user: { id } }) {
-    return this.wishlistsService.removeOne(wishListId, id);
+  async deleteWishlist(
+    @Param('id') wishListId: number,
+    @Req() { user: { id } },
+  ) {
+    return this.wishlistsService.removeOne(id, wishListId);
   }
 
   @UseInterceptors(WishOwnerInterceptor)

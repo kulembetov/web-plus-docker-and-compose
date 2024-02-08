@@ -1,4 +1,9 @@
-import { ExceptionFilter, Catch, ArgumentsHost, BadRequestException } from '@nestjs/common';
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  BadRequestException,
+} from '@nestjs/common';
 import { Response } from 'express';
 
 @Catch(BadRequestException)
@@ -9,19 +14,15 @@ export class InvalidDataExceptionFilter implements ExceptionFilter {
     const status = exception.getStatus();
     const exceptionResponse = exception.getResponse();
 
-    let messages = exceptionResponse['message'] || [];
-    if (Array.isArray(messages)) {
-      messages = messages.flatMap((error) => 
-        Object.values(error.constraints || {})
-      );
-    } else {
-      messages = [messages];
+    let validationMessages = [];
+    if (typeof exceptionResponse === 'object' && 'message' in exceptionResponse) {
+      validationMessages = exceptionResponse['message'];
     }
 
     response.status(status).json({
       statusCode: status,
       error: 'Bad Request',
-      messages: messages,
+      messages: validationMessages.length > 0 ? validationMessages : ['Не удалось обновить данные. Пожалуйста, проверьте предоставленную информацию на наличие ошибок.'],
     });
   }
 }

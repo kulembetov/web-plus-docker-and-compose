@@ -5,11 +5,11 @@ import { JwtGuard } from '../auth/jwt/jwt.guard';
 
 @Controller('offers')
 export class OffersController {
-	constructor(private readonly offersService: OffersService) {}
+  constructor(private readonly offersService: OffersService) {}
 
-	@UseGuards(JwtGuard)
-	@Post()
-	createOffer(@Body() payload: CreateOfferDto, @Req() req) {
-		return this.offersService.createOffer(payload, req.user);
-	}
+  @UseGuards(JwtGuard)
+  @Post()
+  createOffer(@Body() payload: CreateOfferDto, @Req() req) {
+    return this.offersService.createOffer(payload, req.user);
+  }
 }

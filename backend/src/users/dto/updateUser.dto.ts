@@ -1,9 +1,9 @@
-import { IsEmail, IsOptional, IsUrl, IsString, Length } from 'class-validator';
+import { IsEmail, IsOptional, IsString, Length } from 'class-validator';
 
 export class UpdateUserDto {
   @IsOptional()
   @IsString()
-  @Length(2, 30, { message: 'Строка должна включать от 2 до 30 символов' })
+  @Length(2, 30)
   username?: string;
 
   @IsOptional()
@@ -12,7 +12,7 @@ export class UpdateUserDto {
 
   @IsOptional()
   @IsString()
-  @Length(6, 20, { message: 'Строка должна включать от 6 до 20 символов' })
+  @Length(6, 20)
   password?: string;
 
   @IsOptional()
@@ -21,6 +21,6 @@ export class UpdateUserDto {
   about?: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsString()
   avatar?: string;
 }

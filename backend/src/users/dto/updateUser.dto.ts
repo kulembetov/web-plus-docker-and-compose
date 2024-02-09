@@ -25,7 +25,6 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsEmail()
   email: string;
   @IsOptional()
-  @Length(6, 20, { message: 'Строка должна включать от 6 до 20 символов' })
   @IsNotEmpty()
   password: string;
 }

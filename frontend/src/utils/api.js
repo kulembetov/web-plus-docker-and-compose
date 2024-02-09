@@ -58,7 +58,7 @@ export const refreshUser = contextSetter => {
   try {
     getOwnUser().then(user => contextSetter(user));
   } catch (e) {
-    console.error('Failed updating user');
+    console.error('Ошибка обновления пользователя');
   }
 };
 

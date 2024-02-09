@@ -70,8 +70,12 @@ export class WishlistsService {
   async removeOne(userId: number, wishListId: number) {
     const wishlist = await this.findOne(wishListId);
 
+    if (!wishlist) {
+      throw new ServerException(ErrorCode.WishlistNotFound);
+    }
+
     if (userId !== wishlist.owner.id) {
-      throw new ServerException(ErrorCode.WishNotFound);
+      throw new ServerException(ErrorCode.DeleteForbidden);
     }
 
     return await this.wishlistsRepository.delete(wishListId);

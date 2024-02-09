@@ -83,7 +83,7 @@ export class WishesService {
     if (checkCopyWish) {
       throw new BadRequestException({
         description:
-          'Не удалось обновить данные. Пожалуйста, проверьте предоставленную информацию на наличие ошибок.',
+          'Не удалось обновить данные. Возможно, вы уже добавили подарок с такими же данными.',
       });
     }
     copyWish.copied++;

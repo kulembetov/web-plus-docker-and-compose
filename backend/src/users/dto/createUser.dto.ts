@@ -22,5 +22,6 @@ export class CreateUserDto {
   @IsEmail()
   email: string;
   @IsNotEmpty()
+  @Length(6, 20, { message: 'Строка должна включать от 6 до 20 символов' })
   password: string;
 }

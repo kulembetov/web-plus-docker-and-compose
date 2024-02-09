@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
@@ -30,15 +30,19 @@ import { WishlistsModule } from './wishlists/wishlists.module';
         new winston.transports.File({ filename: 'error.log', level: 'error' }),
       ],
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'database',
-      port: 5432,
-      username: 'postgres',
-      password: 'postgres',
-      database: 'kupipodariday',
-      entities: [User, Wish, Wishlist, Offer],
-      synchronize: true,
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get<string>('POSTGRES_HOST'),
+        port: configService.get<number>('POSTGRES_PORT'),
+        username: configService.get<string>('POSTGRES_USERNAME'),
+        password: configService.get<string>('POSTGRES_PASSWORD'),
+        database: configService.get<string>('POSTGRES_DB'),
+        entities: [User, Wish, Wishlist, Offer],
+        synchronize: configService.get<boolean>('POSTGRES_SYNCHRONIZE'),
+      }),
+      inject: [ConfigService],
     }),
     ConfigModule.forRoot(),
     UsersModule,

@@ -7,9 +7,9 @@ import { ConfigService } from '@nestjs/config';
 import { Wishlist } from '../wishlists/entities/wishlist.entity';
 
 @Module({
-	imports: [TypeOrmModule.forFeature([User, Wishlist])],
-	controllers: [UsersController],
-	providers: [UsersService, ConfigService],
-	exports: [UsersService]
+  imports: [TypeOrmModule.forFeature([User, Wishlist])],
+  controllers: [UsersController],
+  providers: [UsersService, ConfigService],
+  exports: [UsersService],
 })
 export class UsersModule {}

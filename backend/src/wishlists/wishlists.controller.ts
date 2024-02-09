@@ -3,7 +3,6 @@ import {
   Controller,
   Get,
   Post,
-  Delete,
   Req,
   Param,
   UseGuards,
@@ -38,13 +37,5 @@ export class WishlistsController {
   @Get(':id')
   async findOneById(@Param('id') id: number): Promise<WishList> {
     return this.wishlistsService.findOne(id);
-  }
-
-  @Delete(':id')
-  async deleteWishlist(
-    @Param('id') id: number,
-    @Req() req
-  ): Promise<void> {
-    await this.wishlistsService.removeOne(id, req.user.id);
   }
 }

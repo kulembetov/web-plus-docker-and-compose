@@ -1,41 +1,42 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  Param,
   Post,
   Req,
-  Param,
   UseGuards,
-  UseInterceptors,
 } from '@nestjs/common';
-import { WishList } from './entity/wishlist.entity';
+import { JwtGuard } from '../auth/jwt/jwt.guard';
 import { CreateWishlistDto } from './dto/createWishlist.dto';
 import { WishlistsService } from './wishlists.service';
-import { JwtGuard } from 'src/auth/guards/auth.guard';
-import { WishOwnerInterceptor } from 'src/interceptors/wish-owner.interceptor';
 
-@UseGuards(JwtGuard)
 @Controller('wishlistlists')
 export class WishlistsController {
   constructor(private readonly wishlistsService: WishlistsService) {}
 
-  @UseInterceptors(WishOwnerInterceptor)
+  @UseGuards(JwtGuard)
   @Get()
-  async getAll(): Promise<WishList[]> {
-    return await this.wishlistsService.findAll();
+  getWishlists(@Req() req) {
+    return this.wishlistsService.getWishlists(req.user.id);
   }
 
+  @UseGuards(JwtGuard)
   @Post()
-  async create(
-    @Req() { user: { id } },
-    @Body() createWishlistDto: CreateWishlistDto,
-  ): Promise<WishList> {
-    return await this.wishlistsService.createWishlist(id, createWishlistDto);
+  createWishlist(@Body() createWishlistDto: CreateWishlistDto, @Req() req) {
+    return this.wishlistsService.createWishlist(createWishlistDto, req.user.id);
   }
 
-  @UseInterceptors(WishOwnerInterceptor)
+  @UseGuards(JwtGuard)
   @Get(':id')
-  async findOneById(@Param('id') id: number): Promise<WishList> {
-    return this.wishlistsService.findOne(id);
+  getWishlist(@Param() userQuery: { id: string }) {
+    return this.wishlistsService.getWishlist(+userQuery.id);
+  }
+
+  @UseGuards(JwtGuard)
+  @Delete(':id')
+  removeWishlist(@Param() userQuery: { id: string }, @Req() req) {
+    return this.wishlistsService.removeWishlist(+userQuery.id, +req.user.id);
   }
 }

@@ -1,16 +1,15 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { OffersService } from './offers.service';
 import { CreateOfferDto } from './dto/createOffer.dto';
-import { JwtGuard } from 'src/auth/guards/auth.guard';
+import { JwtGuard } from '../auth/jwt/jwt.guard';
 
 @Controller('offers')
-@UseGuards(JwtGuard)
 export class OffersController {
-  constructor(private readonly offersService: OffersService) {}
+	constructor(private readonly offersService: OffersService) {}
 
-  @Post()
-  async createOffer(@Req() req, @Body() createOfferDto: CreateOfferDto) {
-    const userId = req.user.id;
-    return await this.offersService.createOffer(userId, createOfferDto);
-  }
+	@UseGuards(JwtGuard)
+	@Post()
+	createOffer(@Body() payload: CreateOfferDto, @Req() req) {
+		return this.offersService.createOffer(payload, req.user);
+	}
 }

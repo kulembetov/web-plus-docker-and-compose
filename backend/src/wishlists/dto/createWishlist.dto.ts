@@ -1,15 +1,14 @@
-import { IsArray, IsNumber, IsString, IsUrl, Length } from 'class-validator';
+import { IsArray, IsNotEmpty, IsString, IsUrl, Length } from 'class-validator';
 
 export class CreateWishlistDto {
+  @IsNotEmpty()
+  @Length(1, 250, { message: 'Строка должна включать от 1 до 250 символов' })
   @IsString()
-  @Length(2, 30)
   name: string;
-
   @IsUrl()
-  @IsString()
+  @IsNotEmpty()
   image: string;
-
+  @IsNotEmpty()
   @IsArray()
-  @IsNumber({}, { each: true })
   itemsId: number[];
 }

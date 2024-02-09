@@ -1,79 +1,63 @@
-import { Injectable } from '@nestjs/common';
-import { WishList } from './entity/wishlist.entity';
-import { CreateWishlistDto } from './dto/createWishlist.dto';
-import { Repository, DataSource } from 'typeorm';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { WishesService } from 'src/wishes/wishes.service';
-import { UsersService } from 'src/users/users.service';
-import { ServerException } from 'src/exceptions/server.exception';
-import { ErrorCode } from 'src/exceptions/error-codes';
+import { Repository } from 'typeorm';
+import { User } from '../users/entities/user.entity';
+import { CreateWishlistDto } from './dto/createWishlist.dto';
+import { Wishlist } from './entities/wishlist.entity';
 
 @Injectable()
 export class WishlistsService {
   constructor(
-    @InjectRepository(WishList)
-    private readonly wishlistsRepository: Repository<WishList>,
-    private readonly wishesService: WishesService,
-    private readonly usersService: UsersService,
-    private readonly dataSource: DataSource,
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
+    @InjectRepository(Wishlist)
+    private wishlistRepository: Repository<Wishlist>,
   ) {}
 
-  async findAll() {
-    const wishlists = await this.wishlistsRepository.find({
-      relations: ['owner', 'items'],
-    });
-
-    if (!wishlists) {
-      throw new ServerException(ErrorCode.WishlistNotFound);
-    }
-
-    return wishlists;
-  }
-
-  async createWishlist(userId: number, createWishlistDto: CreateWishlistDto) {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-    try {
-      const { itemsId, ...rest } = createWishlistDto;
-
-      const items = await this.wishesService.getWishListByIds(itemsId);
-      const owner = await this.usersService.findById(userId);
-
-      const wishList = await this.wishlistsRepository.save({
-        ...rest,
-        items,
-        owner,
-      });
-      await queryRunner.commitTransaction();
-      return wishList;
-    } catch (err) {
-      await queryRunner.rollbackTransaction();
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  async findOne(id: number) {
-    const wishlist = await this.wishlistsRepository.findOne({
+  async createWishlist(createWishlistDto: CreateWishlistDto, id: number) {
+    const user = await this.usersRepository.findOne({
       where: { id },
-      relations: ['owner', 'items'],
+      relations: { wishes: true, wishlists: true },
     });
+    const wishes = createWishlistDto.itemsId.map((itemId) =>
+      user.wishes.find((item) => item.id === itemId),
+    );
+    const wishlist = await this.wishlistRepository.create({
+      name: createWishlistDto.name,
+      items: wishes,
+      image: createWishlistDto.image,
+      owner: user,
+    });
+    return await this.wishlistRepository.save(wishlist);
+  }
 
-    if (!wishlist) {
-      throw new ServerException(ErrorCode.WishlistNotFound);
-    }
+  async getWishlists(id: number) {
+    const wishlist = await this.usersRepository.findOne({
+      where: { id },
+      relations: { wishlists: true },
+    });
+    return wishlist.wishlists;
+  }
 
+  async getWishlist(id: number) {
+    const wishlist = await this.wishlistRepository.findOne({
+      where: { id },
+      relations: { items: true, owner: true },
+    });
     return wishlist;
   }
 
-  async removeOne(userId: number, wishListId: number) {
-    const wishlist = await this.findOne(wishListId);
-
-    if (userId !== wishlist.owner.id) {
-      throw new ServerException(ErrorCode.WishNotFound);
+  async removeWishlist(id: number, userId: number) {
+    const wishlist = await this.wishlistRepository.findOne({
+      where: { id },
+      relations: { owner: true },
+    });
+    if (wishlist.owner.id === userId) {
+      return await this.wishlistRepository.remove(wishlist);
     }
-
-    return await this.wishlistsRepository.delete(wishListId);
+    throw new ConflictException({
+      description:
+        'Вы можете удалять только те элементы, которые создали сами.',
+    });
   }
 }

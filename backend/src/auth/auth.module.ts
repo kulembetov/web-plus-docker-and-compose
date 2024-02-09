@@ -1,28 +1,27 @@
 import { Module } from '@nestjs/common';
-import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { HashModule } from 'src/hash/hash.module';
 import { UsersModule } from 'src/users/users.module';
 import { PassportModule } from '@nestjs/passport';
+import { JwtStrategy } from './jwt/jwt.strategy';
 import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule } from '@nestjs/config';
-import { JwtStrategy } from 'src/strategies/jwt.strategy';
-import { LocalStrategy } from 'src/strategies/local.strategy';
-import JWTConfigService from 'src/config/jwtConfig';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { LocalStrategy } from './local/local.strategy';
+import { AuthController } from './auth.controller';
 
 @Module({
-  imports: [
-    HashModule,
-    UsersModule,
-    PassportModule,
-    ConfigModule,
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      useClass: JWTConfigService,
-    }),
-  ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, LocalStrategy],
-  exports: [AuthService],
+	imports: [
+		UsersModule,
+		PassportModule,
+		JwtModule.registerAsync({
+			imports: [ConfigModule],
+			useFactory: async (configService: ConfigService) => ({
+				secret: configService.get<string>('jwt_secret')
+			}),
+			inject: [ConfigService]
+		})
+	],
+	controllers: [AuthController],
+	providers: [AuthService, JwtStrategy, LocalStrategy, ConfigService],
+	exports: [AuthService]
 })
 export class AuthModule {}

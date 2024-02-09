@@ -1,26 +1,30 @@
-import { IsEmail, IsOptional, IsString, Length } from 'class-validator';
+import { PartialType } from '@nestjs/swagger';
+import { CreateUserDto } from './createUser.dto';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  IsUrl,
+  Length,
+  IsOptional,
+} from 'class-validator';
 
-export class UpdateUserDto {
+export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsOptional()
+  @Length(2, 30, { message: 'Строка должна включать от 2 до 30 символов' })
   @IsString()
-  @Length(2, 30)
-  username?: string;
-
+  username: string;
+  @IsOptional()
+  @Length(2, 200, { message: 'Строка должна включать от 2 до 200 символов' })
+  @IsString()
+  about: string;
+  @IsOptional()
+  @IsUrl()
+  avatar: string;
   @IsOptional()
   @IsEmail()
-  email?: string;
-
+  email: string;
   @IsOptional()
-  @IsString()
-  @Length(6, 20)
-  password?: string;
-
-  @IsOptional()
-  @IsString()
-  @Length(2, 200)
-  about?: string;
-
-  @IsOptional()
-  @IsString()
-  avatar?: string;
+  @IsNotEmpty()
+  password: string;
 }

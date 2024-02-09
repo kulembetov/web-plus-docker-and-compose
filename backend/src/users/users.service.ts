@@ -1,81 +1,72 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { User } from './entity/user.entity';
-import { Repository, QueryFailedError } from 'typeorm';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/createUser.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { FindManyOptions, Repository } from 'typeorm';
+import { User } from './entities/user.entity';
 import { UpdateUserDto } from './dto/updateUser.dto';
-import { HashService } from 'src/hash/hash.service';
-import { ErrorCode } from 'src/exceptions/error-codes';
-import { ServerException } from 'src/exceptions/server.exception';
+import { Wishlist } from '../wishlists/entities/wishlist.entity';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
-    private readonly usersRepository: Repository<User>,
-    private readonly hashService: HashService,
+    private usersRepository: Repository<User>,
+    @InjectRepository(User)
+    private wishlistRepository: Repository<Wishlist>,
   ) {}
 
-  async createUser(createUserDto: CreateUserDto) {
-    try {
-      const userWithHash = await this.hashService.getUserData<CreateUserDto>(
-        createUserDto,
-      );
-      return await this.usersRepository.save(userWithHash);
-    } catch (err) {
-      if (err instanceof QueryFailedError) {
-        throw new ServerException(ErrorCode.UserAlreadyExists);
-      }
-    }
-  }
-
-  async findByUsername(username: string): Promise<User> {
-    return await this.usersRepository.findOneBy({ username });
-  }
-
-  async findByEmail(email: string): Promise<User> {
-    return await this.usersRepository.findOneBy({ email });
-  }
-
-  async findById(id: number): Promise<User> {
-    return await this.usersRepository.findOneBy({ id });
-  }
-
-  async updateUser(id: number, updateUserDto: UpdateUserDto) {
-    const newUserData = updateUserDto.hasOwnProperty('password')
-      ? await this.hashService.getUserData<UpdateUserDto>(updateUserDto)
-      : updateUserDto;
-    const user = await this.usersRepository.update(id, newUserData);
-    if (user.affected === 0) {
-      throw new ServerException(ErrorCode.UpdateError);
-    }
-    return this.findById(id);
-  }
-
-  async findMany(query: string) {
-    const emailRegexp = /^[\w\.-]+@[\w\.-]+\.\w{2,4}$/;
-
-    const user = emailRegexp.test(query)
-      ? await this.findByEmail(query)
-      : await this.findByUsername(query);
-
-    if (!user) {
-      throw new ServerException(ErrorCode.UserNotFound);
-    }
-
-    return [user];
-  }
-
-  async findWishes(id: number, relations: string[]) {
-    const { wishes } = await this.usersRepository.findOne({
-      where: { id },
-      relations,
+  async create(createUserDto: CreateUserDto) {
+    const password = await bcrypt.hash(createUserDto.password, 10);
+    const user = await this.usersRepository.create({
+      ...createUserDto,
+      password,
     });
-
-    if (!wishes) {
-      throw new ServerException(ErrorCode.WishNotFound);
+    try {
+      return await this.usersRepository.save(user);
+    } catch (err) {
+      throw new ConflictException({
+        description:
+          'Пользователь с таким именем или электронной почтой уже зарегистрирован. Пожалуйста, используйте другие данные для регистрации.',
+      });
     }
+  }
 
-    return wishes;
+  async findByUsername(username: string) {
+    const user = await this.usersRepository.findOneBy({ username });
+    delete user.password;
+    return user;
+  }
+
+  async findUserForValidatePassword(query: FindManyOptions<User>) {
+    return await this.usersRepository.findOne(query);
+  }
+
+  async editUser(editUserData: UpdateUserDto, user) {
+    try {
+      return await this.usersRepository.save({
+        ...user,
+        ...editUserData,
+      });
+    } catch (err) {
+      throw new ConflictException({
+        description:
+          'Пользователь с таким именем или электронной почтой уже зарегистрирован. Пожалуйста, используйте другие данные для регистрации.',
+      });
+    }
+  }
+
+  async getUsers(query: FindManyOptions<User>) {
+    const users = await this.usersRepository.find(query);
+    users.map((item) => {
+      delete item.password;
+      return item;
+    });
+    return users;
+  }
+
+  async getUserWishes(query: FindManyOptions<User>) {
+    const userWishes = await this.usersRepository.findOne(query);
+    return userWishes.wishes;
   }
 }

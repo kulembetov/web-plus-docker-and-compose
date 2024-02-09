@@ -1,88 +1,64 @@
 import {
-  Controller,
-  Get,
-  Req,
-  Body,
-  Patch,
-  Param,
-  UseGuards,
-  Post,
-  UseInterceptors,
-  UseFilters,
+	Controller,
+	Get,
+	Post,
+	Body,
+	Patch,
+	UseGuards,
+	Req,
+	Param
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { User } from './entity/user.entity';
+import { CreateUserDto } from './dto/createUser.dto';
+import { JwtGuard } from '../auth/jwt/jwt.guard';
 import { UpdateUserDto } from './dto/updateUser.dto';
-import { JwtGuard } from 'src/auth/guards/auth.guard';
-import { Wish } from 'src/wishes/entity/wish.entity';
-import { UserWishesDto } from './dto/user-wishes.dto';
-import { ServerException } from 'src/exceptions/server.exception';
-import { ErrorCode } from 'src/exceptions/error-codes';
-import { UserPasswordInterceptor } from 'src/interceptors/user-password.interceptor';
-import { WishOwnerInterceptor } from 'src/interceptors/wish-owner.interceptor';
-import { InvalidDataExceptionFilter } from 'src/filters/invalid-data-exception.filter';
 
-@UseGuards(JwtGuard)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+	constructor(private readonly usersService: UsersService) {}
 
-  @UseInterceptors(UserPasswordInterceptor)
-  @Get('me')
-  async getCurrentUser(@Req() req): Promise<User> {
-    const currentUser = await this.usersService.findById(req.user.id);
+	@Post()
+	createUser(@Body() createUserDto: CreateUserDto) {
+		return this.usersService.create(createUserDto);
+	}
 
-    if (!currentUser) {
-      throw new ServerException(ErrorCode.UserNotFound);
-    }
+	@UseGuards(JwtGuard)
+	@Patch('me')
+	editUser(@Body() newUserData: UpdateUserDto, @Req() req) {
+		return this.usersService.editUser(newUserData, req.user);
+	}
 
-    return currentUser;
-  }
+	@UseGuards(JwtGuard)
+	@Get(':username')
+	findOne(@Param() userQuery: { username: string }, @Req() req) {
+		return userQuery.username === 'me'
+			? req.user
+			: this.usersService.findByUsername(userQuery.username);
+	}
 
-  @UseInterceptors(WishOwnerInterceptor)
-  @Get('me/wishes')
-  async findCurrentUserWishes(@Req() { user: { id } }): Promise<Wish[]> {
-    const relations = ['wishes', 'wishes.owner', 'wishes.offers'];
-    return await this.usersService.findWishes(id, relations);
-  }
+	@UseGuards(JwtGuard)
+	@Get('me/wishes')
+	getUserWishes(@Req() req) {
+		return this.usersService.getUserWishes({
+			where: { username: req.user.username },
+			relations: { wishes: true }
+		});
+	}
 
-  @UseInterceptors(UserPasswordInterceptor)
-  @Post('find')
-  async findByQuery(@Body('query') query: string): Promise<User[]> {
-    const user = await this.usersService.findMany(query);
+	@UseGuards(JwtGuard)
+	@Get(':id/wishes')
+	getUser(@Param() userQuery) {
+		return this.usersService.getUserWishes({
+			where: [{ email: userQuery.id }, { username: userQuery.id }],
+			relations: { wishes: true }
+		});
+	}
 
-    return user;
-  }
-
-  @UseInterceptors(UserPasswordInterceptor)
-  @Get(':username')
-  async getUserData(@Param('username') username: string): Promise<User> {
-    const userData = await this.usersService.findByUsername(username);
-
-    if (!userData) {
-      throw new ServerException(ErrorCode.UserNotFound);
-    }
-
-    return userData;
-  }
-
-  @UseInterceptors(WishOwnerInterceptor)
-  @Get(':username/wishes')
-  async findUserWishes(
-    @Param('username') username: string,
-  ): Promise<UserWishesDto[]> {
-    const { id } = await this.usersService.findByUsername(username);
-    const relations = ['wishes', 'wishes.owner', 'wishes.offers'];
-    return await this.usersService.findWishes(id, relations);
-  }
-
-  @UseInterceptors(UserPasswordInterceptor)
-  @UseFilters(InvalidDataExceptionFilter)
-  @Patch('me')
-  async updateUserData(
-    @Req() req,
-    @Body() updateUserDto: UpdateUserDto,
-  ): Promise<User> {
-    return await this.usersService.updateUser(req.user.id, updateUserDto);
-  }
+	@UseGuards(JwtGuard)
+	@Post('find')
+	getUsers(@Body() userQuery: { query: string }) {
+		return this.usersService.getUsers({
+			where: [{ email: userQuery.query }, { username: userQuery.query }]
+		});
+	}
 }

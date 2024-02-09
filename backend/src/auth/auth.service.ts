@@ -1,45 +1,31 @@
-import { Injectable } from '@nestjs/common';
-import { UsersService } from 'src/users/users.service';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { HashService } from 'src/hash/hash.service';
-import { User } from 'src/users/entity/user.entity';
+import { UsersService } from '../users/users.service';
+import { User } from '../users/entities/user.entity';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
-  constructor(
-    private readonly usersService: UsersService,
-    private readonly jwtService: JwtService,
-    private readonly hashService: HashService,
-  ) {}
+	constructor(
+		private jwtService: JwtService,
+		private usersService: UsersService
+	) {}
 
-  async auth(user: User): Promise<any> {
-    const payload = {
-      username: user.username,
-      sub: user.id,
-    };
+	auth(user: User) {
+		const payload = { sub: Number(user.id) };
+		return { access_token: this.jwtService.sign(payload) };
+	}
 
-    return {
-      access_token: this.jwtService.sign(payload),
-    };
-  }
-
-  async validateUser(username: string, password: string): Promise<any> {
-    const user = await this.usersService.findByUsername(username);
-
-    if (!user) return null;
-
-    const verifyPassword = await this.hashService.verifyPassword(
-      password,
-      user.password,
-    );
-
-    if (verifyPassword) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password, ...result } = user;
-
-      return result;
-    }
-
-    return null;
-  }
+	async validatePassword(username: string, password: string) {
+		const user = await this.usersService.findUserForValidatePassword({
+			where: { username }
+		});
+		if (!(await bcrypt.compare(password, user.password)) || !user) {
+			throw new UnauthorizedException({
+				description: 'Неверный логин или пароль'
+			});
+		}
+		delete user.password;
+		return user;
+	}
 }

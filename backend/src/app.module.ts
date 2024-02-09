@@ -1,30 +1,22 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UsersModule } from './users/users.module';
-import { WishesModule } from './wishes/wishes.module';
-import { WishlistsModule } from './wishlists/wishlists.module';
-import { OffersModule } from './offers/offers.module';
-import { HashModule } from './hash/hash.module';
-import { AuthModule } from './auth/auth.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { createDbConfig } from './config/dbConfig';
-import { JwtModule } from '@nestjs/jwt';
-import { User } from './users/entity/user.entity';
-import { WishList } from './wishlists/entity/wishlist.entity';
-import { Wish } from './wishes/entity/wish.entity';
-import { Offer } from './offers/entity/offer.entity';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { AuthModule } from './auth/auth.module';
+import { Offer } from './offers/entities/offer.entity';
+import { OffersModule } from './offers/offers.module';
+import { User } from './users/entities/user.entity';
+import { UsersModule } from './users/users.module';
+import { Wish } from './wishes/entities/wish.entity';
+import { WishesModule } from './wishes/wishes.module';
+import { Wishlist } from './wishlists/entities/wishlist.entity';
+import { WishlistsModule } from './wishlists/wishlists.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
-    ThrottlerModule.forRoot({
-      ttl: 60,
-      limit: 100,
-    }),
     WinstonModule.forRoot({
       levels: {
         critical_error: 0,
@@ -38,21 +30,24 @@ import { APP_GUARD } from '@nestjs/core';
         new winston.transports.File({ filename: 'error.log', level: 'error' }),
       ],
     }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: createDbConfig,
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: 'database',
+      port: 5432,
+      username: 'postgres',
+      password: 'postgres',
+      database: 'kupipodariday',
+      entities: [User, Wish, Wishlist, Offer],
+      synchronize: true,
     }),
-    TypeOrmModule.forFeature([User, Wish, WishList, Offer]),
+    ConfigModule.forRoot(),
     UsersModule,
     WishesModule,
     WishlistsModule,
     OffersModule,
-    HashModule,
     AuthModule,
-    JwtModule,
   ],
-  controllers: [],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

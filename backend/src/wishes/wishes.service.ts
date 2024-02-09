@@ -1,163 +1,122 @@
-import { Injectable } from '@nestjs/common';
-import { Repository, DataSource } from 'typeorm';
-import { Wish } from './entity/wish.entity';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CreateWishDto } from './dto/createWish.dto';
-import { UsersService } from 'src/users/users.service';
-import { ServerException } from 'src/exceptions/server.exception';
-import { ErrorCode } from 'src/exceptions/error-codes';
+import { Repository } from 'typeorm';
+import { User } from '../users/entities/user.entity';
+import { Wishlist } from '../wishlists/entities/wishlist.entity';
+import { CreateWishDto } from './dto/createWsh.dto';
+import { UpdateWishDto } from './dto/updateWish.dto';
+import { Wish } from './entities/wish.entity';
 
 @Injectable()
 export class WishesService {
   constructor(
     @InjectRepository(Wish)
-    private readonly wishesRepository: Repository<Wish>,
-    private readonly usersService: UsersService,
-    private readonly dataSource: DataSource,
+    private wishRepository: Repository<Wish>,
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
+    @InjectRepository(User)
+    private wishlistRepository: Repository<Wishlist>,
   ) {}
-
-  async createWish(
-    userId: number,
-    createWishDto: CreateWishDto,
-  ): Promise<Wish> {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...rest } = await this.usersService.findById(userId);
-    return await this.wishesRepository.save({
+  async create(createWishDto: CreateWishDto, userInfo) {
+    const user = await this.usersRepository.findOne({
+      where: { id: userInfo.id },
+      relations: { wishes: true, wishlists: true },
+    });
+    const wish = await this.wishRepository.create({
       ...createWishDto,
-      owner: rest,
+      owner: user,
     });
+    user.wishes.push(wish);
+    await this.usersRepository.save(user);
+    return await this.wishRepository.save(wish);
   }
 
-  async getWishById(id: number) {
-    const wish = await this.wishesRepository.findOne({
+  async getWish(id: number, user: User) {
+    const userWish = await this.wishRepository.findOne({
       where: { id },
-      relations: ['owner'],
+      relations: { owner: true, offers: true },
     });
-
-    if (!wish) {
-      throw new ServerException(ErrorCode.WishNotFound);
-    }
-
-    return wish;
+    if (userWish.owner.id !== user.id)
+      userWish.offers = userWish.offers.filter((item) => !item.hidden);
+    return userWish;
   }
 
-  async getWishInfo(userId: number, id: number) {
-    const wish = await this.wishesRepository.findOne({
+  async removeWish(id: number, userId: number) {
+    const wish = await this.wishRepository.findOne({
       where: { id },
-      relations: ['owner', 'offers', 'offers.user'],
+      relations: { owner: true },
     });
-
-    if (!wish) {
-      throw new ServerException(ErrorCode.WishNotFound);
-    }
-
-    if (userId === wish.owner.id) {
-      return wish;
-    } else {
-      const filteredOffers = wish.offers.filter((offer) => !offer.hidden);
-      wish.offers = filteredOffers;
-      return wish;
-    }
+    if (wish.owner.id === userId) return await this.wishRepository.remove(wish);
+    throw new ConflictException({
+      description:
+        'Вы можете удалять только те элементы, которые создали сами.',
+    });
   }
 
-  async findLastWishes() {
-    const wishes = await this.wishesRepository.find({
-      relations: ['owner'],
-      order: {
-        createdAt: 'DESC',
-      },
-      take: 40,
-    });
-
-    if (!wishes) {
-      throw new ServerException(ErrorCode.WishesNotFound);
-    }
-
-    return wishes;
+  async getLastWishes() {
+    return this.wishRepository.find({ order: { createdAt: 'DESC' }, take: 40 });
   }
 
-  async findTopWishes() {
-    const wishes = await this.wishesRepository.find({
-      relations: ['owner'],
-      order: {
-        copied: 'DESC',
-      },
-      take: 20,
-    });
-
-    if (!wishes) {
-      throw new ServerException(ErrorCode.WishesNotFound);
-    }
-
-    return wishes;
+  async getTopWishes() {
+    return this.wishRepository.find({ order: { copied: 'DESC' }, take: 20 });
   }
 
-  async copyWish(userId: number, wishId: number) {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { id, createdAt, updatedAt, owner, ...wish } =
-        await this.getWishById(wishId);
-      const copiedWish = await this.createWish(userId, wish);
-      await this.wishesRepository.update(wishId, {
-        copied: copiedWish.copied + 1,
+  async copyWish(id: number, user: User) {
+    const copyWish = await this.wishRepository.findOne({ where: { id } });
+    const userWishes = await this.usersRepository.findOne({
+      where: { id: user.id },
+      relations: { wishes: true },
+    });
+    const checkCopyWish = userWishes.wishes.find((item) => {
+      if (
+        item.name === copyWish.name &&
+        item.price === copyWish.price &&
+        item.link === copyWish.link &&
+        item.image === copyWish.image
+      )
+        return item;
+    });
+    if (checkCopyWish) {
+      throw new BadRequestException({
+        description:
+          'Не удалось обновить данные. Пожалуйста, проверьте предоставленную информацию на наличие ошибок.',
       });
-      await queryRunner.commitTransaction();
-      return copiedWish;
-    } catch (err) {
-      await queryRunner.rollbackTransaction();
-    } finally {
-      await queryRunner.release();
     }
+    copyWish.copied++;
+    const newWish = await this.wishRepository.create({
+      name: copyWish.name,
+      link: copyWish.link,
+      image: copyWish.image,
+      price: copyWish.price,
+      description: copyWish.description,
+      owner: user,
+      raised: 0,
+    });
+    await this.wishRepository.save(copyWish);
+    return await this.wishRepository.save(newWish);
   }
 
-  async getWishListByIds(ids: number[]): Promise<Wish[]> {
-    const wishes = await this.wishesRepository
-      .createQueryBuilder('item')
-      .where('item.id IN (:...ids)', { ids })
-      .getMany();
-
-    if (!wishes) {
-      throw new ServerException(ErrorCode.WishesNotFound);
-    }
-    return wishes;
-  }
-
-  async update(userId: number, wishId: number, updateData: any) {
-    const wish = await this.getWishById(wishId);
-
-    if (updateData.hasOwnProperty('price') && wish.raised > 0) {
-      throw new ServerException(ErrorCode.RaisedForbidden);
+  async editWish(user: User, updateWishDto: UpdateWishDto, id: number) {
+    const wish = await this.wishRepository.findOne({
+      where: { id },
+      relations: { owner: true },
+    });
+    if (user.id !== wish.owner.id) {
+      throw new BadRequestException({
+        description:
+          'Вы можете редактировать только подарки, которые создали сами',
+      });
+    } else if (Number(wish.raised) !== 0) {
+      throw new BadRequestException({
+        description:
+          'Вы не можете редактировать подарки, которые уже поддерживались',
+      });
     }
 
-    if (userId !== wish.owner.id) {
-      throw new ServerException(ErrorCode.UpdateError);
-    }
-
-    const updatedWish = await this.wishesRepository.update(wishId, updateData);
-
-    if (updatedWish.affected === 0) {
-      throw new ServerException(ErrorCode.UpdateError);
-    }
-  }
-
-  async updateRaised(id: number, updateData: any) {
-    const wish = await this.wishesRepository.update(id, updateData);
-
-    if (wish.affected === 0) {
-      throw new ServerException(ErrorCode.RaisedForbidden);
-    }
-  }
-
-  async removeOne(wishId: number, userId: number): Promise<void> {
-    const wish = await this.getWishById(wishId);
-
-    if (userId !== wish.owner.id) {
-      throw new ServerException(ErrorCode.Forbidden);
-    }
-
-    await this.wishesRepository.delete(wishId);
+    return await this.wishRepository.save({ ...wish, ...updateWishDto });
   }
 }

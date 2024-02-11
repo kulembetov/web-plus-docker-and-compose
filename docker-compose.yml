@@ -46,6 +46,8 @@ services:
     image: postgres
     env_file: .env
     restart: unless-stopped
+    ports:
+      - "5432:5432"
     networks:
       - app-network
     volumes:
@@ -56,3 +58,8 @@ networks:
 
 volumes:
   postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /var/lib/docker/volumes/web-plus-docker-and-compose_postgres_data/_data
+      o: bind
